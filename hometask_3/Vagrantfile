@@ -1,0 +1,27 @@
+Vagrant.configure("2") do |config|
+   config.vm.box = "ubuntu/bionic64"
+   config.vm.hostname = 'ConfluenceVM'
+   config.vm.provision "shell", inline: <<-SHELL
+     apt-get update
+     apt-get install -y mysql-server
+     sudo mysql -e 'USE mysql;
+     UPDATE user SET authentication_string = PASSWORD("123456") WHERE User = "root";
+     FLUSH PRIVILEGES;
+     CREATE DATABASE CONFLUENCE;
+     quit'
+     /etc/init.d/mysql start
+     cd /vagrant
+     chmod a+x atlassian-confluence-7.3.1-x64.bin
+     sudo ./atlassian-confluence-7.3.1-x64.bin -q -varfile /vagrant/response.varfile
+     cd /opt/atlassian/confluence/bin
+     sudo ./start-confluence.sh
+   SHELL
+   
+   config.vm.network "forwarded_port", guest: 8090, host: 8080
+   config.vm.network "forwarded_port", guest: 3306, host: 3306
+   config.vm.provider "virtualbox" do |v|
+    v.name = "Confluence_VM"
+        v.memory = 3072
+    v.cpus = 2
+   end
+end
